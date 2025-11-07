@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Real Estate Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        /* Updated Professional Blue/Teal Palette */
+        :root {
+            --primary: #1e3a8a; /* Deep Blue for background/accents */
+            --secondary: #3b82f6; /* Vibrant Blue for buttons/highlights */
+            --header-color: #0d9488; /* Teal for main titles */
+            --light-bg: #f3f4f6;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Subtle diagonal gradient for background texture */
+            background: linear-gradient(135deg, var(--light-bg) 0%, #e5e7eb 100%);
+            min-height: 100vh;
+        }
+        .app-container {
+            max-width: 1300px;
+            margin: 2.5rem auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+            border: 1px solid #d1d5db;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        @media (min-width: 1024px) {
+            .app-container {
+                display: grid;
+                grid-template-columns: 300px 1fr; /* Wider sidebar */
+            }
+        }
+        .sidebar {
+            background-color: var(--light-bg);
+            border-right: 1px solid #d1d5db;
+            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            overflow-y: auto;
+            max-height: 85vh;
+        }
+        @media (min-width: 1024px) {
+            .sidebar {
+                border-radius: 20px 0 0 20px;
+                max-height: none;
+            }
+        }
+        .main-content {
+            padding: 2.5rem;
+        }
+        .main-header {
+            color: var(--primary);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.05);
+        }
+        /* Enhanced gradient for prediction result */
+        .prediction-container {
+            background: linear-gradient(145deg, var(--secondary) 0%, var(--primary) 100%);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3); /* Even stronger shadow */
+            transition: transform 0.3s;
+            border: 2px solid #ffffff30; /* subtle inner border */
+        }
+        .prediction-container:hover {
+             transform: translateY(-2px);
+        }
+        .prediction-result {
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.7);
+        }
+        .metric-card {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+            background: #ffffff;
+        }
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            border-color: var(--secondary);
+        }
+        .action-button {
+            background: linear-gradient(45deg, var(--primary) 0%, var(--secondary) 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(60, 130, 240, 0.4);
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+            box-shadow: 0 6px 20px rgba(60, 130, 240, 0.6);
+        }
+        .info-box {
+            border-left: 5px solid var(--header-color);
+        }
+        /* Style for range inputs - Custom thumb/track */
+        input[type=range] {
+            height: 8px; /* Thinner track */
+            background-color: #d1d5db;
+            border-radius: 4px;
+            appearance: none;
+            cursor: pointer;
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            border: 3px solid white; /* Highlight border */
+            transition: background 0.2s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            background: var(--secondary);
+        }
+        .tab {
+            cursor: pointer;
+            transition: background-color 0.2s, border-bottom 0.2s, color 0.2s;
+            border-bottom: 3px solid transparent;
+            position: relative;
+        }
+        .tab-active {
+            border-bottom: 3px solid var(--secondary);
+            font-weight: 700;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="sidebar">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-3">🏡 Property Data Input</h2>
+        <div class="space-y-6" id="predictionInputs">
+
+            <div>
+                <label for="bed" class="block text-sm font-medium text-gray-700 mb-1">🛏️ Bedrooms: <span id="bedValue" class="font-semibold text-gray-900">3</span></label>
+                <input type="range" id="bed" min="1" max="10" value="3" step="1" class="w-full">
+            </div>
+
+            <div>
+                <label for="bath" class="block text-sm font-medium text-gray-700 mb-1">🛁 Bathrooms: <span id="bathValue" class="font-semibold text-gray-900">2</span></label>
+                <input type="range" id="bath" min="1" max="8" value="2" step="1" class="w-full">
+            </div>
+
+            <div>
+                <label for="sqft" class="block text-sm font-medium text-gray-700 mb-1">📐 **Square Footage** (sq ft)</label>
+                <input type="number" id="sqft" min="300" max="10000" value="1500" step="50" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary">
+            </div>
+
+            <div class="border-t pt-4 mt-4">
+                <h3 class="text-lg font-bold mb-2 text-gray-700">Advanced Factors</h3>
+            </div>
+
+            <div>
+                <label for="yearBuilt" class="block text-sm font-medium text-gray-700 mb-1">📅 Year Built: <span id="yearBuiltValue" class="font-semibold text-gray-900">2005</span></label>
+                <input type="range" id="yearBuilt" min="1950" max="2025" value="2005" step="1" class="w-full">
+            </div>
+
+            <div>
+                <label for="floorLevel" class="block text-sm font-medium text-gray-700 mb-1">⬆️ Floor Level (1=Ground): <span id="floorLevelValue" class="font-semibold text-gray-900">5</span></label>
+                <input type="range" id="floorLevel" min="1" max="50" value="5" step="1" class="w-full">
+            </div>
+
+            <div>
+                <label for="locationQuality" class="block text-sm font-medium text-gray-700 mb-1">📍 Location Quality</label>
+                <select id="locationQuality" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary">
+                    <option value="1.2">Prime (x1.2)</option>
+                    <option value="1.0" selected>Average (x1.0)</option>
+                    <option value="0.8">Developing (x0.8)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-gray-300">
+            <h3 class="text-lg font-semibold mb-2">📊 Quick Estimate Summary</h3>
+            <p id="quickStats" class="text-gray-600 text-sm">Update inputs to see the base valuation data.</p>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="text-center mb-8">
+            <h1 class="main-header text-4xl lg:text-5xl font-extrabold">Real Estate Dynamics Platform</h1>
+            <p class="sub-header text-gray-500 italic mt-2">Valuation, Sales, Rental, and Financial Analysis</p>
+        </header>
+
+        <nav class="flex justify-around border-b border-gray-300 mb-8">
+            <div id="tabPredict" class="tab p-3 text-lg text-gray-500 tab-active" data-view="predict">
+                💰 Price Prediction
+            </div>
+            <div id="tabSell" class="tab p-3 text-lg text-gray-500" data-view="sell">
+                📈 Sell Value Estimate
+            </div>
+            <div id="tabRent" class="tab p-3 text-lg text-gray-500" data-view="rent">
+                🛠️ Rental Damage Calc
+            </div>
+            <div id="tabAffordability" class="tab p-3 text-lg text-gray-500" data-view="affordability">
+                🏦 Affordability Analysis
+            </div>
+        </nav>
+
+        <div id="viewContainer">
+
+            <div id="view-predict">
+                <div class="grid lg:grid-cols-3 gap-6 mb-8">
+                    <div class="lg:col-span-2">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">📋 Property Summary</h2>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div id="metricBed" class="metric-card bg-white p-4 rounded-xl text-center">
+                                <p class="text-gray-500 text-sm">🛏️ Bedrooms</p>
+                                <p class="text-2xl font-bold mt-1 text-gray-900">3</p>
+                            </div>
+                            <div id="metricBath" class="metric-card bg-white p-4 rounded-xl text-center">
+                                <p class="text-gray-500 text-sm">🛁 Bathrooms</p>
+                                <p class="text-2xl font-bold mt-1 text-gray-900">2</p>
+                            </div>
+                            <div id="metricSqft" class="metric-card bg-white p-4 rounded-xl text-center">
+                                <p class="text-gray-500 text-sm">📐 Square Feet</p>
+                                <p class="text-2xl font-bold mt-1 text-gray-900">1,500</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-1 flex flex-col justify-end">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">🎯 Run Prediction</h2>
+                        <button id="predictButton" class="action-button w-full p-3 rounded-full text-white font-bold text-lg hover:opacity-90">
+                            🔮 Calculate Property Value
+                        </button>
+                    </div>
+                </div>
+
+                <div id="predictionOutput" class="hidden">
+                    <div class="prediction-container p-6 rounded-xl mb-6">
+                        <div class="prediction-result text-white text-3xl lg:text-4xl text-center">
+                            💰 Estimated Price: <span id="estimatedPrice">$0</span>
+                        </div>
+                    </div>
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">📊 Prediction Metrics</h2>
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="metric-card bg-white p-4 rounded-xl text-center">
+                            <p class="text-gray-500 text-sm">💲 Price per Sq Ft</p>
+                            <p id="metricPpsf" class="text-2xl font-bold mt-1 text-teal-600">--</p>
+                        </div>
+                        <div class="metric-card bg-white p-4 rounded-xl text-center">
+                            <p class="text-gray-500 text-sm">🏦 Est. Monthly Payment</p>
+                            <p id="metricMortgage" class="text-2xl font-bold mt-1 text-indigo-600">--</p>
+                        </div>
+                        <div class="metric-card bg-white p-4 rounded-xl text-center">
+                            <p class="text-gray-500 text-sm">🏷️ Property Category</p>
+                            <p id="metricCategory" class="text-2xl font-bold mt-1 text-yellow-600">--</p>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <h4 class="font-medium text-gray-700">💹 Price Comparison</h4>
+                        <canvas id="priceComparisonChart" class="mt-2"></canvas>
+                    </div>
+                    <div class="info-box bg-gray-50 p-4 rounded-xl mt-6">
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">💡 Market Insights</h3>
+                        <p id="marketInsights" class="text-gray-600">--</p>
+                    </div>
+                </div>
+                <div id="defaultStatePredict">
+                    <div class="info-box bg-gray-100 p-6 rounded-xl text-center mt-12">
+                        <h3 class="text-2xl font-bold mb-2 text-gray-800">🎯 Start by entering data</h3>
+                        <p class="text-gray-600">Adjust the core property details in the sidebar to get a real-time valuation of the flat.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-sell" class="hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">📈 Sell Your Flat: Estimated Listing Value</h2>
+
+                <div class="bg-blue-50 p-6 rounded-xl mb-6 info-box">
+                    <p class="text-blue-800 font-medium">This feature estimates a fair market selling price by applying **depreciation** based on age and adjusting for **maintenance condition**.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Flat Condition Factors</h3>
+
+                        <div>
+                            <label for="flatAge" class="block text-sm font-medium text-gray-700 mb-1">🏚️ Flat Age (Years): <span id="flatAgeValue" class="font-semibold text-gray-900">10</span></label>
+                            <input type="range" id="flatAge" min="0" max="70" value="10" step="1" class="w-full">
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="maintenanceScore" class="block text-sm font-medium text-gray-700 mb-1">🩹 Maintenance Score (1=Poor, 5=Excellent): <span id="maintenanceScoreValue" class="font-semibold text-gray-900">3</span></label>
+                            <input type="range" id="maintenanceScore" min="1" max="5" value="3" step="1" class="w-full">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col justify-between p-4 bg-gray-50 rounded-xl">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-700">Valuation Base</h3>
+                        <p class="text-gray-700 mb-4">Base Price from Prediction: <span id="sellBasePrice" class="font-bold text-secondary text-2xl">$0</span></p>
+
+                        <button id="sellButton" class="action-button w-full p-3 rounded-full text-white font-bold text-lg hover:opacity-90">
+                            💰 Estimate Selling Price
+                        </button>
+                    </div>
+                </div>
+
+                <div id="sellOutput" class="hidden mt-8">
+                    <div class="prediction-container p-6 rounded-xl mb-6" style="background: linear-gradient(145deg, #10b981 0%, #059669 100%);"> <div class="prediction-result text-white text-3xl lg:text-4xl text-center">
+                            💵 Estimated Listing Value: <span id="estimatedSellPrice">$0</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                         <div class="metric-card bg-white p-4 rounded-xl">
+                            <p class="text-gray-500 text-sm">📉 Depreciation Applied</p>
+                            <p id="depreciationAmount" class="text-2xl font-bold mt-1 text-red-600">--</p>
+                        </div>
+                        <div class="metric-card bg-white p-4 rounded-xl">
+                            <p class="text-gray-500 text-sm">⭐ Maintenance Adjustment</p>
+                            <p id="maintenanceAdjustment" class="text-2xl font-bold mt-1 text-blue-600">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-rent" class="hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">🛠️ Rental Damage Compensation Calculator</h2>
+
+                <div class="bg-red-50 p-6 rounded-xl mb-6 info-box">
+                    <p class="text-red-800 font-medium">This feature estimates the tenant's financial **liability** for damages caused to the flat beyond standard wear and tear.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Damage Details</h3>
+
+                        <div>
+                            <label for="damageType" class="block text-sm font-medium text-gray-700 mb-1">💥 Type of Damage (Base Cost)</label>
+                            <select id="damageType" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary">
+                                <option value="1500">Wall/Paint Damage (Est. \$1,500)</option>
+                                <option value="4000">Major Appliance Failure (Est. \$4,000)</option>
+                                <option value="8000">Flooring/Structural Damage (Est. \$8,000)</option>
+                                <option value="500">Minor Fixture Damage (Est. \$500)</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="damageSeverity" class="block text-sm font-medium text-gray-700 mb-1">Severity Multiplier (1=Minor, 3=Extreme): <span id="damageSeverityValue" class="font-semibold text-gray-900">1.5</span></label>
+                            <input type="range" id="damageSeverity" min="1.0" max="3.0" value="1.5" step="0.5" class="w-full">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col justify-end">
+                        <div class="mt-0 md:mt-6">
+                            <label for="rentFlatAge" class="block text-sm font-medium text-gray-700 mb-1">🏠 Flat Age Multiplier (0.5 for Old flats to reduce liability): <span id="rentFlatAgeValue" class="font-semibold text-gray-900">1.0</span></label>
+                            <input type="range" id="rentFlatAge" min="0.5" max="1.0" value="1.0" step="0.1" class="w-full">
+                        </div>
+
+                        <button id="rentButton" class="action-button w-full p-3 rounded-full text-white font-bold text-lg hover:opacity-90 mt-6">
+                            💲 Calculate Compensation
+                        </button>
+                    </div>
+                </div>
+
+                <div id="rentOutput" class="hidden mt-8">
+                    <div class="prediction-container p-6 rounded-xl mb-6" style="background: linear-gradient(145deg, #f59e0b 0%, #d97706 100%);"> <div class="prediction-result text-white text-3xl lg:text-4xl text-center">
+                            💸 Tenant Liability: <span id="damageLiability">$0</span>
+                        </div>
+                    </div>
+                    <div class="info-box bg-gray-50 p-4 rounded-xl">
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">📝 Notes on Compensation</h3>
+                        <p class="text-gray-600">This liability is the estimated repair cost, adjusted by the severity of the damage and the prior depreciation of the flat's components.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-affordability" class="hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">🏦 Mortgage Affordability Analysis</h2>
+
+                <div class="bg-green-50 p-6 rounded-xl mb-6 info-box">
+                    <p class="text-green-800 font-medium">Use this tool to determine the **maximum price** of a home you can comfortably afford based on standard banking Debt-to-Income (DTI) rules (max 43% DTI).</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Financial Inputs</h3>
+
+                        <div>
+                            <label for="annualIncome" class="block text-sm font-medium text-gray-700 mb-1">💵 Annual Income (USD)</label>
+                            <input type="number" id="annualIncome" min="10000" value="80000" step="1000" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary">
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="monthlyDebts" class="block text-sm font-medium text-gray-700 mb-1">💳 Total Monthly Debts (Car, Loans, etc.)</label>
+                            <input type="number" id="monthlyDebts" min="0" value="500" step="100" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary">
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="downPayment" class="block text-sm font-medium text-gray-700 mb-1">⬇️ Down Payment Percentage: <span id="downPaymentValue" class="font-semibold text-gray-900">20%</span></label>
+                            <input type="range" id="downPayment" min="5" max="50" value="20" step="5" class="w-full">
+                        </div>
+
+                    </div>
+
+                    <div class="flex flex-col justify-end">
+                        <div class="p-4 bg-gray-50 rounded-xl mb-6">
+                            <p class="text-sm text-gray-700">Assumptions:</p>
+                            <ul class="list-disc ml-4 text-xs text-gray-600">
+                                <li>Max DTI (Debt-to-Income) for qualification: **43%**</li>
+                                <li>Interest Rate (Mock): **6.5%** over 30 years</li>
+                            </ul>
+                        </div>
+                        <button id="affordabilityButton" class="action-button w-full p-3 rounded-full text-white font-bold text-lg hover:opacity-90">
+                            🔍 Calculate Affordability
+                        </button>
+                    </div>
+                </div>
+
+                <div id="affordabilityOutput" class="hidden mt-8">
+                    <div class="prediction-container p-6 rounded-xl mb-6" style="background: linear-gradient(145deg, #06b6d4 0%, #0891b2 100%);"> <div class="prediction-result text-white text-3xl lg:text-4xl text-center">
+                            🏡 Max Affordable Price: <span id="maxAffordablePrice">$0</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                         <div class="metric-card bg-white p-4 rounded-xl text-center">
+                            <p class="text-gray-500 text-sm">Max Monthly Payment</p>
+                            <p id="maxMonthlyPayment" class="text-2xl font-bold mt-1 text-teal-600">--</p>
+                        </div>
+                        <div class="metric-card bg-white p-4 rounded-xl text-center">
+                            <p class="text-gray-500 text-sm">Required Down Payment</p>
+                            <p id="requiredDownPayment" class="text-2xl font-bold mt-1 text-red-600">--</p>
+                        </div>
+                        <div class="metric-card bg-white p-4 rounded-xl text-center">
+                            <p class="text-gray-500 text-sm">Total Debt-to-Income</p>
+                            <p id="actualDti" class="text-2xl font-bold mt-1 text-blue-600">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> <footer class="mt-12 pt-4 border-t border-gray-200 text-center">
+            <p class="text-gray-500 text-xs">
+                Last updated: <span id="lastUpdated"></span> | Financial Modeling Project (Final Version) 🚀
+            </p>
+        </footer>
+    </div>
+</div>
+
+<script>
+    // --- DOM Elements ---
+    const bedInput = document.getElementById('bed');
+    const bathInput = document.getElementById('bath');
+    const sqftInput = document.getElementById('sqft');
+    const yearBuiltInput = document.getElementById('yearBuilt');
+    const floorLevelInput = document.getElementById('floorLevel');
+    const locationQualityInput = document.getElementById('locationQuality');
+    const bedValueSpan = document.getElementById('bedValue');
+    const bathValueSpan = document.getElementById('bathValue');
+    const yearBuiltValueSpan = document.getElementById('yearBuiltValue');
+    const floorLevelValueSpan = document.getElementById('floorLevelValue');
+    const quickStats = document.getElementById('quickStats');
+    const lastUpdated = document.getElementById('lastUpdated');
+
+    // Tab elements
+    const tabs = document.querySelectorAll('.tab');
+    const viewContainer = document.getElementById('viewContainer');
+
+    // Predict View elements
+    const predictButton = document.getElementById('predictButton');
+    const predictionOutput = document.getElementById('predictionOutput');
+    const defaultStatePredict = document.getElementById('defaultStatePredict');
+    const estimatedPriceSpan = document.getElementById('estimatedPrice');
+    const metricBed = document.getElementById('metricBed').querySelector('p:last-child');
+    const metricBath = document.getElementById('metricBath').querySelector('p:last-child');
+    const metricSqft = document.getElementById('metricSqft').querySelector('p:last-child');
+    const metricPpsf = document.getElementById('metricPpsf');
+    const metricMortgage = document.getElementById('metricMortgage');
+    const metricCategory = document.getElementById('metricCategory');
+    const marketInsights = document.getElementById('marketInsights');
+    let priceChart = null;
+    let currentPredictedPrice = 0; // Global to pass to other views
+
+    // Sell View elements
+    const flatAgeInput = document.getElementById('flatAge');
+    const maintenanceScoreInput = document.getElementById('maintenanceScore');
+    const flatAgeValueSpan = document.getElementById('flatAgeValue');
+    const maintenanceScoreValueSpan = document.getElementById('maintenanceScoreValue');
+    const sellButton = document.getElementById('sellButton');
+    const sellBasePriceSpan = document.getElementById('sellBasePrice');
+    const sellOutput = document.getElementById('sellOutput');
+    const estimatedSellPriceSpan = document.getElementById('estimatedSellPrice');
+    const depreciationAmountSpan = document.getElementById('depreciationAmount');
+    const maintenanceAdjustmentSpan = document.getElementById('maintenanceAdjustment');
+
+    // Rent View elements
+    const damageTypeInput = document.getElementById('damageType');
+    const damageSeverityInput = document.getElementById('damageSeverity');
+    const rentFlatAgeInput = document.getElementById('rentFlatAge');
+    const damageSeverityValueSpan = document.getElementById('damageSeverityValue');
+    const rentFlatAgeValueSpan = document.getElementById('rentFlatAgeValue');
+    const rentButton = document.getElementById('rentButton');
+    const rentOutput = document.getElementById('rentOutput');
+    const damageLiabilitySpan = document.getElementById('damageLiability');
+    
+    // Affordability View elements (NEW)
+    const annualIncomeInput = document.getElementById('annualIncome');
+    const monthlyDebtsInput = document.getElementById('monthlyDebts');
+    const downPaymentInput = document.getElementById('downPayment');
+    const downPaymentValueSpan = document.getElementById('downPaymentValue');
+    const affordabilityButton = document.getElementById('affordabilityButton');
+    const affordabilityOutput = document.getElementById('affordabilityOutput');
+    const maxAffordablePriceSpan = document.getElementById('maxAffordablePrice');
+    const maxMonthlyPaymentSpan = document.getElementById('maxMonthlyPayment');
+    const requiredDownPaymentSpan = document.getElementById('requiredDownPayment');
+    const actualDtiSpan = document.getElementById('actualDti');
+
+
+    // --- Utility Functions ---
+
+    const formatCurrency = (amount) => new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0
+    }).format(amount);
+
+    const formatNumber = (num) => new Intl.NumberFormat('en-US').format(num);
+
+    const calculateMonthlyPayment = (price, downPaymentPct, annualRate, years) => {
+        const principal = price * (1 - (downPaymentPct / 100));
+        const monthlyRate = annualRate / 12 / 100;
+        const totalPayments = years * 12;
+
+        if (monthlyRate === 0) {
+            return principal / totalPayments; // Simple division if rate is zero
+        }
+        
+        // M = P [ i(1 + i)^n ] / [ (1 + i)^n – 1]
+        const power = Math.pow(1 + monthlyRate, totalPayments);
+        const monthlyPayment = principal * (monthlyRate * power) / (power - 1);
+        return monthlyPayment || 0;
+    };
+
+
+    // --- Core Model Logic ---
+
+    function mockPredict(bed, bath, sqft, yearBuilt, floorLevel, locationQuality) {
+        const ppsfBase = 200;
+        const bedPremium = 15000;
+        const bathPremium = 10000;
+        const baseValue = 150000;
+
+        // Age Factor: Newer flats are better (2025 - yearBuilt). 
+        const ageFactor = Math.max(0, 2025 - yearBuilt);
+        // Depreciation: $300 per year of age
+        const ageDepreciation = ageFactor * 300 * Math.min(1, sqft / 2000); // Scale depreciation by size
+
+        // Floor Factor: Higher floors add value, up to 10%
+        const floorFactor = 1 + (Math.log(floorLevel) * 0.05); // Logarithmic increase
+
+        let prediction = (sqft * ppsfBase) + (bed * bedPremium) + (bath * bathPremium) + baseValue;
+
+        // Apply age depreciation
+        prediction -= ageDepreciation;
+
+        // Apply floor factor and location multiplier
+        prediction *= floorFactor;
+        prediction *= parseFloat(locationQuality);
+
+        // Ensure prediction is not negative
+        prediction = Math.max(100000, prediction);
+
+        // Apply a small random noise (+/- 5%)
+        const noise = (Math.random() - 0.5) * 0.10 * prediction;
+        return Math.round(prediction + noise);
+    }
+
+    // --- Sell Value Logic ---
+    function calculateSellValue(basePrice, flatAge, maintenanceScore) {
+        // Depreciation: 1.5% per year of age, max 40 years.
+        const maxDepreciationYears = 40;
+        const ageToDepreciate = Math.min(flatAge, maxDepreciationYears);
+        const ageDepreciationRate = ageToDepreciate * 0.015;
+        
+        // Maintenance Adjustment: Score 3 is neutral (1.0). Score 5 is +10%, Score 1 is -10%
+        const maintenanceMultiplier = 1 + ((maintenanceScore - 3) * 0.05);
+
+        // Max cumulative depreciation limited to 50%
+        const finalDepreciation = Math.min(0.5, ageDepreciationRate);
+
+        const valueAfterDepreciation = basePrice * (1 - finalDepreciation);
+        const netValue = valueAfterDepreciation * maintenanceMultiplier;
+
+        const depreciationAmount = basePrice - valueAfterDepreciation;
+        const maintenanceAdj = netValue - valueAfterDepreciation;
+
+        return {
+            finalPrice: Math.round(netValue),
+            depreciationAmount: depreciationAmount,
+            maintenanceAdjustment: maintenanceAdj
+        };
+    }
+
+    // --- Rental Damage Logic ---
+    function calculateRentalDamage(baseCost, severityMultiplier, ageMultiplier) {
+        // baseCost is from the selected damage type
+        const severity = parseFloat(severityMultiplier);
+        const age = parseFloat(ageMultiplier); // This is the multiplier (0.5 to 1.0)
+
+        const totalDamageCost = baseCost * severity;
+        const tenantLiability = totalDamageCost * age;
+
+        return {
+            totalDamageCost: totalDamageCost,
+            tenantLiability: Math.round(tenantLiability)
+        };
+    }
+
+    // --- Affordability Logic ---
+    function calculateAffordability(annualIncome, monthlyDebts, downPaymentPct, annualRate, years) {
+        const maxDti = 0.43; // Standard banking limit
+
+        const monthlyIncome = annualIncome / 12;
+        const maxHousingPayment = (monthlyIncome * maxDti) - monthlyDebts;
+
+        if (maxHousingPayment <= 0) {
+            return { maxPrice: 0, maxPayment: 0, requiredDownPayment: 0, actualDti: (monthlyDebts / monthlyIncome) };
+        }
+
+        // Reverse Mortgage Payment Formula to find Principal (P)
+        // M = P [ i(1 + i)^n ] / [ (1 + i)^n – 1]
+        // P = M * [ (1 + i)^n – 1 ] / [ i(1 + i)^n ]
+        const monthlyRate = annualRate / 12 / 100;
+        const totalPayments = years * 12;
+        const power = Math.pow(1 + monthlyRate, totalPayments);
+
+        const principal = maxHousingPayment * (power - 1) / (monthlyRate * power);
+        
+        // Max Price = Principal / (1 - Down Payment Percentage)
+        const dpFactor = downPaymentPct / 100;
+        const maxPrice = principal / (1 - dpFactor);
+        const requiredDownPayment = maxPrice * dpFactor;
+        
+        const actualDti = ((maxHousingPayment + monthlyDebts) / monthlyIncome) * 100;
+
+        return {
+            maxPrice: Math.round(maxPrice),
+            maxPayment: Math.round(maxHousingPayment),
+            requiredDownPayment: Math.round(requiredDownPayment),
+            actualDti: actualDti
+        };
+    }
+
+    // --- Event Handlers & UI Updates ---
+
+    function updateRangeSpan(input, span) {
+        span.textContent = input.value;
+        updateQuickStats();
+    }
+    
+    function updateQuickStats() {
+        const sqft = parseFloat(sqftInput.value);
+        const bed = parseFloat(bedInput.value);
+        const bath = parseFloat(bathInput.value);
+        const yearBuilt = parseFloat(yearBuiltInput.value);
+        const floorLevel = parseFloat(floorLevelInput.value);
+        const locationQuality = locationQualityInput.value;
+
+        const basePrediction = mockPredict(bed, bath, sqft, yearBuilt, floorLevel, locationQuality);
+        const ppsf = basePrediction / sqft;
+
+        quickStats.innerHTML = `
+            Base Value: **${formatCurrency(basePrediction)}**
+            (Avg. **${formatCurrency(ppsf)}**/sq ft)
+            <br>
+            Year: **${yearBuilt}**, Floor: **${floorLevel}**, Quality: **${locationQualityInput.options[locationQualityInput.selectedIndex].text}**
+        `;
+    }
+
+    function initChart(predictedPrice) {
+        const ctx = document.getElementById('priceComparisonChart').getContext('2d');
+
+        // Mock comparison data
+        const avgPrice = predictedPrice * (Math.random() * 0.1 + 0.95); // +/- 5%
+        const highPrice = predictedPrice * (Math.random() * 0.1 + 1.1); // +10% to +20%
+        const lowPrice = predictedPrice * (Math.random() * 0.1 + 0.8); // -10% to -20%
+
+        const labels = ['Low-End Comparable', 'Your Estimate', 'Average Market', 'High-End Comparable'];
+        const data = [lowPrice, predictedPrice, avgPrice, highPrice];
+        const colors = ['#f87171', '#1e3a8a', '#3b82f6', '#0d9488']; // Red, Deep Blue, Vibrant Blue, Teal
+
+        if (priceChart) {
+            priceChart.destroy();
+        }
+
+        priceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Price (USD)',
+                    data: data,
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('1e3a8a', 'ffffff').replace('3b82f6', 'ffffff')),
+                    borderWidth: 1,
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Price: ' + formatCurrency(context.parsed.y);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // --- Main Calculation Handlers ---
+
+    // 1. Price Prediction
+    predictButton.addEventListener('click', () => {
+        const bed = parseFloat(bedInput.value);
+        const bath = parseFloat(bathInput.value);
+        const sqft = parseFloat(sqftInput.value);
+        const yearBuilt = parseFloat(yearBuiltInput.value);
+        const floorLevel = parseFloat(floorLevelInput.value);
+        const locationQuality = locationQualityInput.value;
+        
+        currentPredictedPrice = mockPredict(bed, bath, sqft, yearBuilt, floorLevel, locationQuality);
+
+        // Calculations
+        const ppsf = currentPredictedPrice / sqft;
+        const downPaymentPct = 20; // Assume 20% down
+        const mortgageRate = 6.5; // Assume 6.5%
+        const mortgageYears = 30;
+        const monthlyPayment = calculateMonthlyPayment(currentPredictedPrice, downPaymentPct, mortgageRate, mortgageYears);
+
+        // UI Updates
+        estimatedPriceSpan.textContent = formatCurrency(currentPredictedPrice);
+        metricBed.textContent = bed;
+        metricBath.textContent = bath;
+        metricSqft.textContent = formatNumber(sqft);
+        metricPpsf.textContent = formatCurrency(ppsf) + '/sq ft';
+        metricMortgage.textContent = formatCurrency(monthlyPayment) + ' est.';
+
+        let category = 'Mid-Range';
+        if (currentPredictedPrice > 700000) category = 'Luxury';
+        else if (currentPredictedPrice < 300000) category = 'Economy';
+        metricCategory.textContent = category;
+
+        marketInsights.textContent = `The estimated price of ${formatCurrency(currentPredictedPrice)} is based on a **${category}** valuation model, showing a strong price per square foot due to **${locationQualityInput.options[locationQualityInput.selectedIndex].text}** location and **${bed}** bedrooms.`;
+
+        predictionOutput.classList.remove('hidden');
+        defaultStatePredict.classList.add('hidden');
+        
+        // Initialize Chart
+        initChart(currentPredictedPrice);
+
+        // Update Sell View Base Price
+        sellBasePriceSpan.textContent = formatCurrency(currentPredictedPrice);
+    });
+
+    // 2. Sell Value Estimate
+    sellButton.addEventListener('click', () => {
+        if (currentPredictedPrice === 0) {
+            alert("Please calculate the Base Price first in the 'Price Prediction' tab.");
+            return;
+        }
+
+        const flatAge = parseFloat(flatAgeInput.value);
+        const maintenanceScore = parseFloat(maintenanceScoreInput.value);
+
+        const result = calculateSellValue(currentPredictedPrice, flatAge, maintenanceScore);
+
+        estimatedSellPriceSpan.textContent = formatCurrency(result.finalPrice);
+        depreciationAmountSpan.textContent = formatCurrency(result.depreciationAmount) + 
+            (result.depreciationAmount > 0 ? ' (Loss)' : ' (Gain)');
+        maintenanceAdjustmentSpan.textContent = formatCurrency(result.maintenanceAdjustment) + 
+            (result.maintenanceAdjustment > 0 ? ' (Gain)' : ' (Loss)');
+
+        sellOutput.classList.remove('hidden');
+    });
+
+    // 3. Rental Damage Calculator
+    rentButton.addEventListener('click', () => {
+        const damageTypeCost = parseFloat(damageTypeInput.value);
+        const severity = parseFloat(damageSeverityInput.value);
+        const ageMultiplier = parseFloat(rentFlatAgeInput.value);
+
+        const result = calculateRentalDamage(damageTypeCost, severity, ageMultiplier);
+
+        damageLiabilitySpan.textContent = formatCurrency(result.tenantLiability);
+        rentOutput.classList.remove('hidden');
+    });
+
+    // 4. Affordability Analysis
+    affordabilityButton.addEventListener('click', () => {
+        const annualIncome = parseFloat(annualIncomeInput.value);
+        const monthlyDebts = parseFloat(monthlyDebtsInput.value);
+        const downPaymentPct = parseFloat(downPaymentInput.value);
+
+        // Hardcoded assumptions from the UI notes
+        const annualRate = 6.5; 
+        const years = 30;
+
+        const result = calculateAffordability(annualIncome, monthlyDebts, downPaymentPct, annualRate, years);
+
+        maxAffordablePriceSpan.textContent = formatCurrency(result.maxPrice);
+        maxMonthlyPaymentSpan.textContent = formatCurrency(result.maxPayment);
+        requiredDownPaymentSpan.textContent = formatCurrency(result.requiredDownPayment);
+        actualDtiSpan.textContent = result.actualDti.toFixed(1) + '%';
+        actualDtiSpan.className = `text-2xl font-bold mt-1 ${result.actualDti > 43 ? 'text-red-600' : 'text-blue-600'}`;
+
+
+        affordabilityOutput.classList.remove('hidden');
+    });
+
+    // --- Tab Switching Logic ---
+
+    function switchView(viewId) {
+        // Hide all views
+        document.querySelectorAll('[id^="view-"]').forEach(view => {
+            view.classList.add('hidden');
+        });
+
+        // Show the selected view
+        document.getElementById(`view-${viewId}`).classList.remove('hidden');
+
+        // Update active tab styling
+        tabs.forEach(tab => {
+            tab.classList.remove('tab-active');
+            if (tab.getAttribute('data-view') === viewId) {
+                tab.classList.add('tab-active');
+            }
+        });
+
+        // Special logic for Sell View to update base price on switch
+        if (viewId === 'sell' && currentPredictedPrice > 0) {
+             sellBasePriceSpan.textContent = formatCurrency(currentPredictedPrice);
+        }
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchView(tab.getAttribute('data-view'));
+        });
+    });
+
+    // --- Initialization & Event Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initial setup for range inputs and quick stats
+        const allRangeInputs = [bedInput, bathInput, yearBuiltInput, floorLevelInput, flatAgeInput, maintenanceScoreInput, damageSeverityInput, rentFlatAgeInput, downPaymentInput];
+        
+        allRangeInputs.forEach(input => {
+            // Find the corresponding span by ID convention (e.g., 'bed' -> 'bedValue')
+            const spanId = input.id + 'Value';
+            const span = document.getElementById(spanId);
+
+            if (span) {
+                // Initial update
+                updateRangeSpan(input, span);
+                // Add event listener for real-time update
+                input.addEventListener('input', () => updateRangeSpan(input, span));
+            }
+        });
+
+        // Listeners for all inputs that affect the base prediction (and quick stats)
+        [bedInput, bathInput, sqftInput, yearBuiltInput, floorLevelInput, locationQualityInput].forEach(input => {
+            input.addEventListener('input', updateQuickStats);
+            updateQuickStats(); // Initial call
+        });
+
+        // Additional non-range listener for sqft
+        sqftInput.addEventListener('change', updateQuickStats);
+        locationQualityInput.addEventListener('change', updateQuickStats);
+        
+        // Affordability Down Payment update
+        downPaymentInput.addEventListener('input', () => {
+            downPaymentValueSpan.textContent = `${downPaymentInput.value}%`;
+        });
+        
+        // Set last updated time
+        lastUpdated.textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Initial view setup
+        switchView('predict');
+    });
+
+</script>
+</body>
+</html>
